@@ -1,0 +1,25 @@
+{
+  "model_type": "byte_level_bpe",
+  "vocab_size": 32838,
+  "add_prefix_space": false,
+  "lowercase": false,
+  "unicode_normalizer": "nfc",
+  "special_tokens": [
+    "<pad>",
+    "<bos>",
+    "<eos>",
+    "<unk>",
+    "<tool_call>",
+    "</tool_call>",
+    "<tool_result>",
+    "</tool_result>",
+    "<search>",
+    "</search>",
+    "<think>",
+    "</think>",
+    "<|user|>",
+    "<|assistant|>",
+    "<|system|>",
+    "<|end|>"
+  ]
+}

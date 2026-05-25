@@ -22,7 +22,7 @@ from typing import Optional
 @dataclass
 class ModelConfig:
     # ── Tokenizer ──────────────────────────────────────────────────────────
-    vocab_size: int = 32_768          # BPE vocabulary size
+    vocab_size: int = 32_838          # BPE vocabulary size
     pad_token_id: int = 0
     bos_token_id: int = 1
     eos_token_id: int = 2
@@ -90,7 +90,7 @@ class ModelConfig:
 # ──────────────────────────────────────────────────────────────────────────
 @dataclass
 class TokenizerConfig:
-    vocab_size: int = 32_768
+    vocab_size: int = 32_838
     min_frequency: int = 2
     # Special tokens
     special_tokens: list = field(default_factory=lambda: [

@@ -1,0 +1,20 @@
+{
+  "pad_token": "<pad>",
+  "bos_token": "<bos>",
+  "eos_token": "<eos>",
+  "unk_token": "<unk>",
+  "additional_special_tokens": [
+    "<tool_call>",
+    "</tool_call>",
+    "<tool_result>",
+    "</tool_result>",
+    "<search>",
+    "</search>",
+    "<think>",
+    "</think>",
+    "<|user|>",
+    "<|assistant|>",
+    "<|system|>",
+    "<|end|>"
+  ]
+}

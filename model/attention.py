@@ -186,6 +186,21 @@ class GroupedQueryAttention(nn.Module):
         k_exp = self._expand_kv(k)
         v_exp = self._expand_kv(v)
         dropout_p = self.attn_drop if self.training else 0.0
+        if attention_mask is not None and is_causal:
+            q_len, k_len = q.shape[-2], k_exp.shape[-2]
+            causal_mask = torch.ones(
+                q_len,
+                k_len,
+                device=q.device,
+                dtype=torch.bool,
+            ).triu(diagonal=1)
+            causal_mask = q.new_zeros(q_len, k_len).masked_fill(
+                causal_mask,
+                torch.finfo(q.dtype).min,
+            )
+            attention_mask = attention_mask.to(device=q.device, dtype=q.dtype) + causal_mask
+            is_causal = False
+
         return F.scaled_dot_product_attention(
             q, k_exp, v_exp,
             attn_mask=attention_mask,

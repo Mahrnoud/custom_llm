@@ -1,3 +1,8 @@
 venv
 .idea
 .DS_Store
+/data/cleaning
+/data/tokenizer_corpus/countries.txt
+/data/tokenizer_corpus/cities.txt
+/data/tokenizer_corpus/colors.txt
+/data/tokenizer_corpus/names.txt

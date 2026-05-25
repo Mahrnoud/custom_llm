@@ -19,6 +19,7 @@ import json
 import math
 import os
 import time
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -93,8 +94,14 @@ class Trainer:
 
         # Gradient checkpointing
         if getattr(stage_cfg, "gradient_checkpointing", False):
-            self.model.gradient_checkpointing_enable()  # works with HF Accelerate wrapping
-                                                         # or custom checkpointing below
+            enable_checkpointing = getattr(self.model, "gradient_checkpointing_enable", None)
+            if callable(enable_checkpointing):
+                enable_checkpointing()
+            else:
+                print(
+                    f"[{stage_cfg.stage_name}] Warning: gradient checkpointing requested "
+                    "but model does not support gradient_checkpointing_enable()."
+                )
 
         # Optimiser
         self.optimizer = AdamW(
@@ -113,7 +120,7 @@ class Trainer:
         )
 
         # Mixed precision scaler (for bf16 on CUDA)
-        self.scaler = torch.cuda.amp.GradScaler(enabled=False)  # bf16 doesn't need scaling
+        self.scaler = None  # bf16 doesn't need scaling
         self.use_bf16 = getattr(stage_cfg, "bf16", True) and self.device.type == "cuda"
         self.amp_dtype = torch.bfloat16 if self.use_bf16 else torch.float32
 
@@ -156,7 +163,7 @@ class Trainer:
 
     # ── Checkpoint helpers ────────────────────────────────────────────────
     def save_checkpoint(self, tag: str = ""):
-        fname = f"checkpoint_{tag or self.global_step:07d}.pt"
+        fname = f"checkpoint_{tag}.pt" if tag else f"checkpoint_{self.global_step:07d}.pt"
         path  = self.output_dir / fname
         torch.save({
             "global_step": self.global_step,
@@ -185,7 +192,12 @@ class Trainer:
         if attn_mask is not None:
             attn_mask = attn_mask.to(self.device)
 
-        with torch.autocast(device_type=self.device.type, dtype=self.amp_dtype):
+        amp_context = (
+            torch.autocast(device_type=self.device.type, dtype=self.amp_dtype)
+            if self.use_bf16
+            else nullcontext()
+        )
+        with amp_context:
             out  = self.model(input_ids, attention_mask=attn_mask, labels=labels)
             loss = out["loss"]
 

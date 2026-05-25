@@ -25,6 +25,7 @@ from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 
 from model.attention import GroupedQueryAttention, KVCache
 from model.moe import SparseMoELayer
@@ -143,6 +144,7 @@ class MoELanguageModel(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.gradient_checkpointing = False
 
         # ── Token Embedding ───────────────────────────────────────────────
         self.embed_tokens = nn.Embedding(config.vocab_size, config.d_model, padding_idx=config.pad_token_id)
@@ -180,6 +182,12 @@ class MoELanguageModel(nn.Module):
 
         # ── Initialise weights ────────────────────────────────────────────
         self.apply(self._init_weights)
+
+    def gradient_checkpointing_enable(self):
+        self.gradient_checkpointing = True
+
+    def gradient_checkpointing_disable(self):
+        self.gradient_checkpointing = False
 
     def _init_weights(self, module: nn.Module):
         std = self.config.initializer_range
@@ -229,7 +237,18 @@ class MoELanguageModel(nn.Module):
         total_aux = torch.zeros(1, device=x.device, dtype=x.dtype)
         for i, layer in enumerate(self.layers):
             cache = kv_caches[i] if kv_caches else None
-            x, aux = layer(x, attention_mask=attn_mask_4d, kv_cache=cache, is_causal=is_causal)
+            if self.gradient_checkpointing and self.training and kv_caches is None:
+                def layer_forward(hidden_states, checkpointed_layer=layer):
+                    return checkpointed_layer(
+                        hidden_states,
+                        attention_mask=attn_mask_4d,
+                        kv_cache=None,
+                        is_causal=is_causal,
+                    )
+
+                x, aux = checkpoint(layer_forward, x, use_reentrant=False)
+            else:
+                x, aux = layer(x, attention_mask=attn_mask_4d, kv_cache=cache, is_causal=is_causal)
             total_aux = total_aux + aux
 
         x = self.norm(x)

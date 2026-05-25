@@ -95,7 +95,15 @@ def build_stage2_datasets(data_dir: str, tokenizer, cfg: Stage2Config, model_cfg
                              eos_id=model_cfg.eos_token_id)
                 for f in jsonl_files
             ]
+            sub_ds = [ds for ds in sub_ds if len(ds) > 0]
+            if not sub_ds:
+                print(f"[Stage2] Warning: all .jsonl files in {path} are empty – skipping.")
+                continue
             ds = sub_ds[0] if len(sub_ds) == 1 else WeightedDataset(sub_ds, [1.0]*len(sub_ds))
+
+        if len(ds) == 0:
+            print(f"[Stage2] Warning: {path} produced 0 samples – skipping.")
+            continue
 
         datasets.append(ds)
         weights.append(default_weight)

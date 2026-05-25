@@ -129,11 +129,22 @@ class WeightedDataset(Dataset):
     """
 
     def __init__(self, datasets: List[Dataset], weights: List[float]):
-        assert len(datasets) == len(weights)
-        total = sum(weights)
-        self.datasets = datasets
-        self.weights  = [w / total for w in weights]
-        self._len     = sum(len(d) for d in datasets)
+        if len(datasets) != len(weights):
+            raise ValueError("datasets and weights must have the same length")
+
+        filtered = [
+            (dataset, float(weight))
+            for dataset, weight in zip(datasets, weights)
+            if len(dataset) > 0 and weight > 0
+        ]
+        if not filtered:
+            raise ValueError("WeightedDataset requires at least one non-empty dataset with a positive weight")
+
+        self.datasets = [dataset for dataset, _ in filtered]
+        raw_weights = [weight for _, weight in filtered]
+        total = sum(raw_weights)
+        self.weights  = [weight / total for weight in raw_weights]
+        self._len     = sum(len(d) for d in self.datasets)
 
     def __len__(self) -> int:
         return self._len

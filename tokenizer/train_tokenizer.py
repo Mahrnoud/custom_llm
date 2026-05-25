@@ -276,7 +276,7 @@ def verify_tokenizer(tokenizer_dir: str) -> None:
     print("─" * 60)
     for text in test_cases:
         enc = tok.encode(text)
-        decoded = tok.decode(enc.ids)
+        decoded = tok.decode(enc.ids, skip_special_tokens=False)
         n_tok = len(enc.ids)
         ok = "✓" if decoded == text else "✗"
         print(f"{ok} tokens={n_tok:4d}  {repr(text[:55])}")

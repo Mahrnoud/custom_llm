@@ -96,10 +96,18 @@ def build_stage1_datasets(data_dir: str, tokenizer, cfg: Stage1Config, model_cfg
                 )
                 for f in jsonl_files
             ]
+            sub_datasets = [ds for ds in sub_datasets if len(ds) > 0]
+            if not sub_datasets:
+                print(f"[Stage1] Warning: all .jsonl files in {path} are empty – skipping.")
+                continue
             if len(sub_datasets) == 1:
                 ds = sub_datasets[0]
             else:
                 ds = WeightedDataset(sub_datasets, [1.0] * len(sub_datasets))
+
+        if len(ds) == 0:
+            print(f"[Stage1] Warning: {path} produced 0 samples – skipping.")
+            continue
 
         datasets.append(ds)
         weights.append(w)

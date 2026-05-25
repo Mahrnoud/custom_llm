@@ -177,6 +177,7 @@ def build_stage3_datasets(data_dir: str, tokenizer, cfg: Stage3Config, model_cfg
 
         jsonl_files = sorted(path.glob("*.jsonl"))
         if not jsonl_files:
+            print(f"[Stage3] Warning: no .jsonl files in {path} – skipping.")
             continue
 
         if is_tool:
@@ -196,7 +197,16 @@ def build_stage3_datasets(data_dir: str, tokenizer, cfg: Stage3Config, model_cfg
                 for f in jsonl_files
             ]
 
+        sub_ds = [ds for ds in sub_ds if len(ds) > 0]
+        if not sub_ds:
+            print(f"[Stage3] Warning: all .jsonl files in {path} are empty – skipping.")
+            continue
+
         ds = sub_ds[0] if len(sub_ds) == 1 else WeightedDataset(sub_ds, [1.0]*len(sub_ds))
+        if len(ds) == 0:
+            print(f"[Stage3] Warning: {path} produced 0 samples – skipping.")
+            continue
+
         datasets.append(ds)
         weights.append(weight)
         print(f"[Stage3] Loaded {subdir:25s}  size={len(ds):>8,}  weight={weight}")
